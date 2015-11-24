@@ -1,6 +1,6 @@
 <html>
 <head>
-	<title>My First React.js App</title>
+	<title>Appbase Bulk Data Insert</title>
 	<script src="https://fb.me/react-0.13.3.js"></script>
 	<script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
 	<script src="bower_components/appbase-js/browser/appbase.js"></script>
@@ -161,7 +161,7 @@
 		        return <Post data={post} />;
 		      });
 		    } else {
-		      content = <p>Please click on Execute!</p>;
+		      content = <p>Select the App and Type and Click on Add data!</p>;
 		    }
 
 		    // Return ul filled with our mapped tweets
@@ -246,6 +246,29 @@
   		  			type:type 
   		  		});
   		  	},
+  		  	addData: function(data){
+  		  		$.ajax({
+					type: "PUT",
+					xhrFields: {
+					  withCredentials: true
+					},
+					headers: {
+					  "Authorization": "Basic " + btoa(this.state.username+':'+this.state.password)
+					},
+					data: data,
+					url: 'http://scalr.api.appbase.io/'+this.state.app_name+ '/' + this.state.type+'/1',
+					dataType: 'json',
+					contentType: "application/json",
+
+					success: function(data) {
+						console.log(data)
+					}.bind(this),
+					error: function(xhr, status, err) {
+						console.error(this.props.url, status, err.toString());
+					}.bind(this)
+				});
+
+  		  	},
 			executeQuery: function(e){
 				// Preserve self reference
 				var self = this;
@@ -270,8 +293,12 @@
 				 10000, {
 				 	url: 'https://randomuser.me/api/',
 				 	  dataType: 'json',
+				 	  xhrFields: {
+				 	    withCredentials: false
+				 	  },
 				 	  success: function(data){
-				 	    console.log(data);
+				 	  	console.log(data)
+				 	    self.addData(JSON.stringify(data.results[0].user));
 				 	  }
 
 			 		}/*args passed to $.ajax*/
@@ -284,13 +311,13 @@
 					<div id ="container1">
 					<div id="col1">
 						<form className="queryForm" onSubmit={this.executeQuery}>
-							<h2> Appbase Stream browser </h2>
+							<h2> Appbase Bulk Data Inserter </h2>
 							<Select onSelected={this.setValue} onSelectedType={this.setType}/>
 					        <input type="text" placeholder="Username" value={this.state.username} />
 					        <input type="text" placeholder="Passowrd" value={this.state.password} />
 					        <input type="text" placeholder="Appname" value={this.state.app_name} />
 					        <input type="text" placeholder="Type"  value={this.state.type} />
-					        <button type="submit"> Add data </button>
+					        <button type="submit"> Add data at every 10s</button>
 					    </form>
 					</div>
 					<div id="col2">
