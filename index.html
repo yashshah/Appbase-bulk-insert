@@ -1,0 +1,312 @@
+<html>
+<head>
+	<title>My First React.js App</title>
+	<script src="https://fb.me/react-0.13.3.js"></script>
+	<script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+	<script src="bower_components/appbase-js/browser/appbase.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body>
+	<div id="container2">
+	</div>
+	<script type="text/jsx">
+
+		var Select= React.createClass({
+
+			getInitialState: function() {
+				var self=this;
+				$.ajaxSetup({
+					crossDomain: true,
+					xhrFields: {
+						withCredentials: true
+					}
+				});
+
+				$.ajax({
+					type: "GET",
+					url: 'https://accapi.appbase.io/user',
+					dataType: 'json',
+					contentType: "application/json",
+
+					success: function(data) {
+						self.setState({options_app: data.body.apps});
+					}.bind(this),
+					error: function(xhr, status, err) {
+						console.error(this.props.url, status, err.toString());
+					}.bind(this)
+				});
+
+				return {
+					options_app: [],
+					options_type: [],
+					app_id: '',
+					app_type: ''
+				};
+			},
+
+			changeApp: function(event){
+				this.setState({app_id: event.target.value});
+				var index = event.nativeEvent.target.selectedIndex;
+				var app_name=event.nativeEvent.target[index].text;
+				var self=this;
+				$.ajaxSetup({
+					crossDomain: true,
+					xhrFields: {
+						withCredentials: true
+					}
+				});
+
+				$.ajax({
+					type: "GET",
+					url: 'https://accapi.appbase.io/app/' + event.target.value + '/permissions',
+					dataType: 'json',
+					contentType: "application/json",
+					success: function(data) {
+						this.props.onSelected(data.body[0].username, data.body[0].password, app_name)
+		  	    		$.ajax({
+							type: "GET",
+							xhrFields: {
+							  withCredentials: true
+							},
+							headers: {
+							  "Authorization": "Basic " + btoa(data.body[0].username+':'+data.body[0].password)
+							},
+							url: 'http://scalr.api.appbase.io/'+app_name+'/_mapping',
+							dataType: 'json',
+							contentType: "application/json",
+
+							success: function(data) {
+								self.setState({options_type: Object.keys(data[app_name].mappings)});
+								console.log(Object.keys(data[app_name].mappings))
+							}.bind(this),
+							error: function(xhr, status, err) {
+								console.error(this.props.url, status, err.toString());
+							}.bind(this)
+						});
+	
+
+
+					}.bind(this),
+					error: function(xhr, status, err) {
+						console.error(this.props.url, status, err.toString());
+					}.bind(this)
+				});
+			},
+			changeType: function(event){
+				this.setState({app_type: event.target.value});
+				this.props.onSelectedType(event.target.value)
+			},
+			render: function() {
+				options_app = $.map(this.state.options_app, function(app_id, app_name){
+					return <option value={app_id}>{app_name}</option>;
+				});
+				options_type = $.map(this.state.options_type, function(app_type){
+					return <option value={app_type}>{app_type}</option>;
+				});
+				return(
+					<div>
+					<select id="app_info" onChange={this.changeApp} value={this.state.app_id}>
+						{options_app}
+					</select>
+					<select id="app_type" onChange={this.changeType} value={this.state.app_type}>
+						{options_type}
+					</select>
+					</div>
+				)
+			}
+		});
+
+
+		if (!library)
+   			var library = {};
+		library.json = {
+			replacer: function(match, pIndent, pKey, pVal, pEnd) {
+				var key = '<span class=json-key>';
+				var val = '<span class=json-value>';
+				var str = '<span class=json-string>';
+				var r = pIndent || '';
+				if (pKey)
+					r = r + key + pKey.replace(/[": ]/g, '') + '</span>: ';
+				if (pVal)
+					r = r + (pVal[0] == '"' ? str : val) + pVal + '</span>';
+				return r + (pEnd || '');
+			},
+			prettyPrint: function(obj) {
+				var jsonLine = /^( *)("[\w]+": )?("[^"]*"|[\w.+-]*)?([,[{])?$/mg;
+					return {__html: JSON.stringify(obj, null, 3)
+					.replace(/&/g, '&amp;').replace(/\\"/g, '&quot;')
+					.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+					.replace(jsonLine, library.json.replacer)};
+			}
+		};
+		var Post = React.createClass({
+		  render: function(){
+		    var data = this.props.data;
+		    return (
+		    	<pre><code dangerouslySetInnerHTML={library.json.prettyPrint(data)}></code></pre>
+		    )
+		  }
+		});
+
+		var Posts = React.createClass({
+
+		  // Render our tweets
+		  render: function(){
+		    // Build list items of single tweet components using map
+
+		    var content;
+		    if (this.props.posts.length > 0) {
+		      content = this.props.posts.map(function(post) {
+		        return <Post data={post} />;
+		      });
+		    } else {
+		      content = <p>Please click on Execute!</p>;
+		    }
+
+		    // Return ul filled with our mapped tweets
+		    return (
+		      <ul className="posts">
+		      	{content}
+		      </ul>
+		    )
+
+		  }
+
+		});
+		var Feed = React.createClass({
+
+		  	// Render the component
+			render: function(){
+
+				return (
+				  <div className="feed">
+				    <Posts posts={this.props.posts} />
+				  </div>
+				)
+			}
+		})
+		
+		var StreamBrowser = React.createClass({
+			// Set the initial component state
+			getInitialState: function(){
+				// Set initial application state using props
+				var query={
+				  "query": {
+				    "match_all": {
+				      
+				    }
+				  }
+				}
+				return {
+					app_name: 'testgsoc',
+					username: 'JxGrCcfHZ',
+					type: 'flipkart_app',
+					password: '1c46a541-98fa-404c-ad61-d41571a82e14',
+					query: JSON.stringify(query,null,'\t'),
+				  	posts: []
+				};
+
+			},
+		
+			addPost: function(post){
+		  		// Get current application state
+	    		var updated = this.state.posts;
+	    		updated.unshift(post);
+	    		this.setState({posts: updated});
+
+		  	},
+  			setValue: function(username, password, app_name){
+  	    		this.setState({username: username});
+  	    		this.setState({password: password});
+  	    		this.setState({app_name: app_name});
+
+  	    		$.ajax({
+					type: "GET",
+					xhrFields: {
+					  withCredentials: true
+					},
+					headers: {
+					  "Authorization": "Basic " + btoa(username+':'+password)
+					},
+					url: 'http://scalr.api.appbase.io/'+app_name+'/_mapping',
+					dataType: 'json',
+					contentType: "application/json",
+
+					success: function(data) {
+						console.log(Object.keys(data[app_name].mappings))
+					}.bind(this),
+					error: function(xhr, status, err) {
+						console.error(this.props.url, status, err.toString());
+					}.bind(this)
+				});
+  		  	},
+  		  	setType: function(type){
+  		  		this.setState({
+  		  			type:type 
+  		  		});
+  		  	},
+			executeQuery: function(e){
+				// Preserve self reference
+				var self = this;
+				var appbaseRef = new Appbase({
+				  url: 'https://scalr.api.appbase.io',
+				  appname: this.state.app_name,
+				  username: this.state.username,
+				  password: this.state.password
+				});
+
+				appbaseRef.searchStream({
+					type: this.state.type,
+					body: JSON.parse(this.state.query)
+				}).on('data', function(response) {
+				    self.addPost(response);
+				    // console.log("searchStream(), new match: ", response);
+				}).on('error', function(error) {
+				    console.log("caught a searchStream() error: ", error)
+				})
+				console.log("Inside query")
+				setInterval($.ajax/*a reference to the ajax function*/,
+				 10000, {
+				 	url: 'https://randomuser.me/api/',
+				 	  dataType: 'json',
+				 	  success: function(data){
+				 	    console.log(data);
+				 	  }
+
+			 		}/*args passed to $.ajax*/
+				);
+				e.preventDefault();
+			},
+
+			render: function() {
+				return (
+					<div id ="container1">
+					<div id="col1">
+						<form className="queryForm" onSubmit={this.executeQuery}>
+							<h2> Appbase Stream browser </h2>
+							<Select onSelected={this.setValue} onSelectedType={this.setType}/>
+					        <input type="text" placeholder="Username" value={this.state.username} />
+					        <input type="text" placeholder="Passowrd" value={this.state.password} />
+					        <input type="text" placeholder="Appname" value={this.state.app_name} />
+					        <input type="text" placeholder="Type"  value={this.state.type} />
+					        <button type="submit"> Add data </button>
+					    </form>
+					</div>
+					<div id="col2">
+						<Feed posts={this.state.posts}/>
+					</div>
+					</div>
+				);
+			}
+		
+		});
+		
+		React.render(
+		  <StreamBrowser />,
+		  document.getElementById('container2')
+		);
+	</script>
+
+</body>
+</html>
