@@ -1,5 +1,5 @@
 # Appbase Bulk Insertion
-Appbase insertion at regular intervals
+Appbase insertion at regular intervals  
 [Demo](http://yashshah.github.io/Appbase-bulk-insert/)  
 ![alt tag](http://g.recordit.co/31sdDupqbv.gif) 
 
