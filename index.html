@@ -204,7 +204,8 @@
 					type: 'flipkart_app',
 					password: '1c46a541-98fa-404c-ad61-d41571a82e14',
 					query: JSON.stringify(query,null,'\t'),
-				  	posts: []
+				  	posts: [],
+				  	buttonText: 'Add data at every 10s'
 				};
 
 			},
@@ -289,20 +290,33 @@
 				    console.log("caught a searchStream() error: ", error)
 				})
 				console.log("Inside query")
-				this.props.interval = setInterval($.ajax/*a reference to the ajax function*/,
-				 10000, {
-				 	url: 'https://randomuser.me/api/',
-				 	  dataType: 'json',
-				 	  xhrFields: {
-				 	    withCredentials: false
-				 	  },
-				 	  success: function(data){
-				 	  	console.log(data)
-				 	    self.addData(JSON.stringify(data.results[0].user));
-				 	  }
 
-			 		}/*args passed to $.ajax*/
-				);
+				if(this.state.buttonText=='Add data at every 10s'){
+					this.setState({
+						buttonText:'Stop Adding' 
+					});
+					this.props.interval = setInterval($.ajax/*a reference to the ajax function*/,
+					 10000, {
+					 	url: 'https://randomuser.me/api/',
+					 	  dataType: 'json',
+					 	  xhrFields: {
+					 	    withCredentials: false
+					 	  },
+					 	  success: function(data){
+					 	  	console.log(data)
+					 	    self.addData(JSON.stringify(data.results[0].user));
+					 	  }
+
+				 		}/*args passed to $.ajax*/
+					);
+				}else{
+					this.setState({
+						buttonText:'Add data at every 10s' 
+					});
+					clearInterval(this.props.interval)
+					console.log("Done")
+
+				}
 				e.preventDefault();
 			},
 			getDefaultProps: function () {
@@ -326,8 +340,7 @@
 					        <input type="text" placeholder="Passowrd" value={this.state.password} />
 					        <input type="text" placeholder="Appname" value={this.state.app_name} />
 					        <input type="text" placeholder="Type"  value={this.state.type} />
-					        <button type="submit"> Add data at every 10s</button>
-					        <button type="button" onClick={this.stopInterval}> Stop Adding</button>
+					        <button type="submit" ref="addbutton">{this.state.buttonText}</button>
 					    </form>
 
 					</div>
